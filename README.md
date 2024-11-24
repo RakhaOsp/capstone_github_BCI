@@ -4,8 +4,11 @@ The worked_try_mamba is succesfull implememntation of Mamba SSM with the use of 
 Hard, mamba and Mamba_torch folders were used during the unsuccesfull attempt in Mamba pipeline in Windows system. Nevertheless, in our opinion this approach is still possible in the further work. For today the approach required the use of python 3.10 and custom wheels for causal-conv1d and trition in the base of windows operating system 
 
 Dataset:
+
 EEG Motor Movement/Imagery Dataset
 https://physionet.org/content/eegmmidb/1.0.0/
+
+
 Specifications:
 
   Code Style
