@@ -1,6 +1,8 @@
 This is capstone repository on the topic of ViT and BCI. Authors: Rakhat Ospanov and Shakhnazar Zhumabekov. 
 The worked_try_mamba is succesfull implememntation of Mamba SSM with the use of CNN and MLP blocks. While the CNN is responsible for input space to feature space mapping and Spatial Convolution of the EEG data, MLP plays a crucial role as a classifier based on the output from Mamba.
 
+![image](https://github.com/user-attachments/assets/946aafda-417a-4c1d-9912-dd243a37a7e2)
+
 Hard, mamba and Mamba_torch folders were used during the unsuccesfull attempt in Mamba pipeline in Windows system. Nevertheless, in our opinion this approach is still possible in the further work. For today the approach required the use of python 3.10 and custom wheels for causal-conv1d and trition in the base of windows operating system 
 
 Dataset:
