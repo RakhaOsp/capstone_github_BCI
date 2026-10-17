@@ -1,0 +1,7 @@
+__pycache__/
+.ipynb_checkpoints/
+*.ckpt
+logs/
+lightning_logs/
+dataset/
+*.edf

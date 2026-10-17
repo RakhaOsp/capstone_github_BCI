@@ -1,108 +1,59 @@
-This is capstone repository on the topic of ViT and BCI. Authors: Rakhat Ospanov and Shakhnazar Zhumabekov. 
-The worked_try_mamba is succesfull implememntation of Mamba SSM with the use of CNN and MLP blocks. While the CNN is responsible for input space to feature space mapping and Spatial Convolution of the EEG data, MLP plays a crucial role as a classifier based on the output from Mamba.
+# EEG Motor Imagery Classification with Mamba SSM
 
-![image](https://github.com/user-attachments/assets/946aafda-417a-4c1d-9912-dd243a37a7e2)
+Bachelor's capstone project, Robotics Engineering, Nazarbayev University (2024–2025).
+Author: **Rakhat Ospanov** · Supervisor: Prof. Berdakh Abibullaev
 
-Hard, mamba and Mamba_torch folders were used during the unsuccesfull attempt in Mamba pipeline in Windows system. Nevertheless, in our opinion this approach is still possible in the further work. For today the approach required the use of python 3.10 and custom wheels for causal-conv1d and trition in the base of windows operating system 
+I tested whether a **Mamba state-space model** can replace the Transformer encoder in a compact EEG classifier for brain–computer interfaces. Mamba scales linearly with sequence length, which matters for long EEG windows and for running on small hardware.
 
-Dataset:
+## Result
 
-EEG Motor Movement/Imagery Dataset
-https://physionet.org/content/eegmmidb/1.0.0/
+| Task | Data | Model | Params | Test accuracy |
+|---|---|---|---|---|
+| Left vs right fist motor imagery (binary) | PhysioNet EEGMMIDB, subjects 1–79, 64 channels | CNN → Mamba → MLP | 293K | **70.9%** |
 
+The data is split 81 / 9 / 10 (train / val / test) in recording order, without shuffling. Because epochs are ordered by subject, the test set comes mostly from the last ~8 subjects, who were not seen in training. This is closer to a cross-subject result than a within-subject one.
 
-Specifications:
+## Model
 
-  Code Style
-  
-      Language-Specific Guidelines:
-          Python: Adhere to PEP 8 for code style.
-          JavaScript: Follow Airbnb's JavaScript style guide.
-          Java: Use Google's Java Style Guide.
-  
-      Formatting:
-          Use 4 spaces for indentation.
-          Limit lines to 80 characters.
-          Include a blank line between functions and classes.
-          Use meaningful names for variables and functions.
-  
-      Documentation:
-          Document complex logic and decisions.
-          Use docstrings for all public methods and classes.
-          Ensure documentation is up-to-date with code changes.
-  
-  Commit Messages
-  
-      Format:
-          Use the present tense: "Add feature" instead of "Added feature."
-          Limit the subject line to 50 characters.
-          Use the body to explain the "why" behind the change, not just "what."
-  
-      Structure:
-  
-      php
-  
-  <type>(<scope>): <subject>
-  
-  <body>
-  
-      Type: Type of change (e.g., feat, fix, chore, docs).
-      Scope: A short description of the area of code affected (optional).
-      Subject: A brief description of the change.
-      Body: (Optional) A detailed explanation of the change.
-  
-  Example:
-  
-  sql
-  
-      feat(auth): add user login
-  
-      Implement user login functionality including validation and error handling.
-  
-      Types:
-          feat: New feature for the user.
-          fix: Bug fix.
-          chore: Changes to the build process or auxiliary tools.
-          docs: Documentation changes only.
-  
-  Branch Naming Conventions
-  
-      Format:
-          Use lowercase with hyphens to separate words.
-          Include a prefix that indicates the type of work (e.g., feature/, bugfix/, hotfix/).
-  
-      Examples:
-          feature/user-authentication
-          bugfix/login-error
-          hotfix/critical-security-patch
-  
-      Branch Naming for Issues:
-          Include the issue number if applicable: feature/issue-123-add-payment-method.
-  
-  Pull Request (PR) Processes
-  
-      Creating a Pull Request:
-          Ensure your branch is up-to-date with the main branch.
-          Provide a descriptive title and a detailed description of the changes.
-          Reference any relevant issues (e.g., Fixes #123).
-  
-      Review Process:
-          Assign at least one team member for review.
-          Address all comments and feedback from reviewers.
-          Ensure that all tests pass before merging.
-  
-      Merging:
-          Use Squash and Merge to maintain a clean commit history.
-          Do not merge if there are unresolved conflicts.
-          Ensure all relevant documentation is updated before merging.
-  
-      After Merging:
-          Delete the branch if it is no longer needed.
-          Verify that the main branch is stable and functioning as expected.
-  
-  Additional Resources
-  
-      GitHub Flow
-      Semantic Versioning
-  
-  If you have any questions or need clarification on any of these guidelines, please reach out to the project maintainers.
+```
+EEG (64 ch × 497 samples)
+  → Conv1d(64→64, k=11) → BatchNorm → ReLU → Dropout   # spatial/temporal filtering
+  → Conv1d(64→128, k=11) → BatchNorm
+  → Mamba(d_model=128, d_state=64, d_conv=4, expand=2) # sequence modelling over time
+  → mean over time
+  → MLP(128→32→1)                                      # left / right
+```
+
+Training: Adam, lr 5e-4 with step decay (×0.1 at 25/50/75%), batch size 10, 100 epochs, PyTorch Lightning.
+
+## Data
+
+[EEG Motor Movement/Imagery Dataset](https://physionet.org/content/eegmmidb/1.0.0/) (Schalk et al., 2004). I use runs 4, 8 and 12 (imagined left/right fist), window 1.0–4.1 s after cue, 160 Hz. After dropping 178 bad epochs, 3,377 trials remain.
+
+## Repository layout
+
+```
+notebooks/
+  eeg_mi_cnn_mamba_mlp.ipynb   # main experiment (the 70.9% result)
+experiments/
+  ctnet_mamba/                 # CTNet with its Transformer blocks swapped for Mamba (exploratory)
+requirements.txt
+```
+
+## Running it
+
+`mamba-ssm` needs **Linux and an NVIDIA GPU** (it compiles CUDA kernels). I ran everything on Google Colab.
+
+```bash
+pip install -r requirements.txt
+```
+
+Then download EEGMMIDB and set `base_data_path` in the *Dataset* section of the notebook.
+
+I also tried to build `mamba-ssm` natively on Windows (Python 3.10, custom wheels for `causal-conv1d` and Triton) and could not get a stable build. Linux was the practical path.
+
+## Credits
+
+- The data pipeline and training wrapper in the main notebook are adapted from [reshalfahsi/eeg-motor-imagery-classification](https://github.com/reshalfahsi/eeg-motor-imagery-classification) (CNN + Transformer + MLP). My change is the Mamba block in place of the Transformer, plus the multi-subject setup.
+- `experiments/ctnet_mamba/` builds on **CTNet** by Wei Zhao et al. (convolutional Transformer for motor imagery EEG); `utils.py` comes from that project.
+- Mamba: [state-spaces/mamba](https://github.com/state-spaces/mamba) (Gu & Dao, 2023), installed from PyPI.

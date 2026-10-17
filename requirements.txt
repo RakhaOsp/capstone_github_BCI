@@ -1,0 +1,10 @@
+# Linux + NVIDIA GPU required for mamba-ssm
+torch==2.4.0
+causal-conv1d
+mamba-ssm
+lightning
+torchmetrics
+mne
+numpy
+matplotlib
+opencv-python
